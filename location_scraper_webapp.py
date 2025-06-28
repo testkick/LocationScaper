@@ -118,13 +118,23 @@ def parse_page(html):
             data['latitude'] = lat
             data['longitude'] = lng
             found_data.append(data)
+            if len(found_data) >= 100:  # Prevent memory overload
+                break
         if found_data:
             break
     return found_data
 
 async def fetch_with_playwright(url):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-dev-shm-usage",
+                "--no-sandbox",
+                "--disable-gpu",
+                "--single-process"
+            ]
+        )
         page = await browser.new_page()
         await page.goto(url)
         await page.wait_for_timeout(5000)
