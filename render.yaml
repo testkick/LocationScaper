@@ -4,9 +4,8 @@ services:
     env: python
     buildCommand: |
       pip install -r requirements.txt
-      playwright install
+      python -m playwright install
     startCommand: gunicorn -b 0.0.0.0:$PORT location_scraper_webapp:app
-
     envVars:
       - key: PYTHON_VERSION
         value: 3.10
