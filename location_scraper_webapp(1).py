@@ -9,6 +9,9 @@ import asyncio
 from playwright.async_api import async_playwright
 import csv
 import io
+import nest_asyncio
+
+nest_asyncio.apply()
 
 app = Flask(__name__)
 
@@ -126,7 +129,7 @@ def scrape():
         url = request.form.get('url')
         html = fetch_html(url)
         if not html:
-            html = asyncio.run(fetch_with_playwright(url))
+            html = asyncio.get_event_loop().run_until_complete(fetch_with_playwright(url))
         data = parse_page(html)
         scraped_data = data
         return render_template_string(HTML_FORM, data=data)
