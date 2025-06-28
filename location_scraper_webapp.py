@@ -1,9 +1,9 @@
-# location_scraper_webapp.py
 
 from flask import Flask, request, jsonify, render_template_string, send_file
 from bs4 import BeautifulSoup
 import requests
 import re
+import json
 from collections import defaultdict
 import asyncio
 from playwright.async_api import async_playwright
@@ -12,11 +12,9 @@ import io
 import nest_asyncio
 
 nest_asyncio.apply()
-
 app = Flask(__name__)
 
-HTML_FORM = """
-<!doctype html>
+HTML_FORM = """<!doctype html>
 <title>Location Scraper</title>
 <h2>Smart Location Scraper</h2>
 <form method=post enctype=multipart/form-data>
@@ -26,16 +24,11 @@ HTML_FORM = """
 </form>
 {% if data %}
   <h3>Scraped {{ data|length }} locations</h3>
-  <a href="/download.csv" target="_blank">📥 Download as CSV</a>
+  <a href="/download.csv" target="_blank">Download CSV</a>
   <pre>{{ data|tojson(indent=2) }}</pre>
-{% endif %}
-"""
+{% endif %}"""
 
-# Global cache to store scraped data for CSV download
 scraped_data = []
-
-def extract_text_or_none(element):
-    return element.get_text(strip=True) if element else None
 
 def find_repeating_blocks(soup):
     tags = soup.find_all(True)
@@ -65,8 +58,34 @@ def classify_field(text):
         return 'name'
     return 'other'
 
+def parse_from_script_tags(soup):
+    data = []
+    for script in soup.find_all('script'):
+        content = script.string or ''
+        if 'store' in content.lower() or 'dealer' in content.lower():
+            try:
+                json_text = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_text:
+                    data_json = json.loads(json_text.group())
+                    if isinstance(data_json, dict) and 'stores' in data_json:
+                        for store in data_json['stores']:
+                            data.append({
+                                'name': store.get('name'),
+                                'address': store.get('address', {}),
+                                'phone': store.get('phone'),
+                                'latitude': store.get('latitude'),
+                                'longitude': store.get('longitude')
+                            })
+            except:
+                continue
+    return data
+
 def parse_page(html):
     soup = BeautifulSoup(html, 'html.parser')
+    script_data = parse_from_script_tags(soup)
+    if script_data:
+        return script_data
+
     candidate_classes = find_repeating_blocks(soup)
     found_data = []
     for class_set in candidate_classes:
@@ -108,6 +127,7 @@ async def fetch_with_playwright(url):
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
         await page.goto(url)
+        await page.wait_for_timeout(5000)
         html = await page.content()
         await browser.close()
         return html
@@ -129,7 +149,9 @@ def scrape():
         url = request.form.get('url')
         html = fetch_html(url)
         if not html:
-            html = asyncio.get_event_loop().run_until_complete(fetch_with_playwright(url))
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            html = loop.run_until_complete(fetch_with_playwright(url))
         data = parse_page(html)
         scraped_data = data
         return render_template_string(HTML_FORM, data=data)
