@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: location-scraper-webapp
+    env: python
+    buildCommand: |
+      pip install -r requirements.txt
+      playwright install
+    startCommand: python location_scraper_webapp(1).py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10
