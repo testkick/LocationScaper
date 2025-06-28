@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: location-scraper-webapp(1)
+    name: location-scraper-webapp
     env: python
     buildCommand: |
       pip install -r requirements.txt
       playwright install
-    startCommand: gunicorn -b 0.0.0.0:$PORT location_scraper_webapp(1):app
+    startCommand: gunicorn -b 0.0.0.0:$PORT location_scraper_webapp:app
 
     envVars:
       - key: PYTHON_VERSION
