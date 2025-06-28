@@ -3,3 +3,4 @@ beautifulsoup4
 requests
 playwright
 gunicorn
+nest_asyncio
