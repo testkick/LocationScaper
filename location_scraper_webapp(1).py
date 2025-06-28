@@ -1,4 +1,4 @@
-# location_scraper_webapp(1).py
+# location_scraper_webapp.py
 
 from flask import Flask, request, jsonify, render_template_string, send_file
 from bs4 import BeautifulSoup
