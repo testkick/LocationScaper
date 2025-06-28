@@ -5,7 +5,7 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       playwright install
-    startCommand: python location_scraper_webapp(1).py
+    startCommand: gunicorn -w 1 -b 0.0.0.0:10000 location_scraper_webapp(1):app
     envVars:
       - key: PYTHON_VERSION
         value: 3.10
