@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: location-scraper-webapp
+    name: location-scraper-webapp(1)
     env: python
     buildCommand: |
       pip install -r requirements.txt
